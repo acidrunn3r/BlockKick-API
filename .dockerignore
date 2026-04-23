@@ -1,0 +1,48 @@
+# .dockerignore
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# === Virtual environments ===
+.venv/
+env/
+ENV/
+venv/
+
+# === Poetry ===
+poetry.lock
+!.gitkeep
+
+# === Environment ===
+.env
+*.env
+!.env.example
+
+# === IDE / Git ===
+.vscode/
+.idea/
+.git/
+.gitignore
+*.swp
+*.swo
+
+# === Testing ===
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.cover
+
+# === Logs & Misc ===
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
