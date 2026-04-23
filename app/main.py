@@ -41,7 +41,7 @@ async def health_check() -> dict[str, Any]:
     }
 
 
-@app.get("/", include_in_schema=False)
+@app.get("/", include_in_schema=False, response_model=None)
 async def root_redirect() -> RedirectResponse | dict[str, str]:
     if settings.DEBUG:
         return RedirectResponse(url="/docs", status_code=status.HTTP_302_FOUND)
