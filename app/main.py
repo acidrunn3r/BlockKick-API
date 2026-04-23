@@ -1,4 +1,7 @@
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import Any
+
 from fastapi import FastAPI, status
 from fastapi.responses import RedirectResponse
 
@@ -6,15 +9,15 @@ from app.config import settings
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     print(f"Starting BlockKick API (env={settings.ENV}, debug={settings.DEBUG})")
-    
+
     # Initializing...
-    
+
     yield
-    
+
     print("Shutting down...")
-    
+
     # Shutting down...
 
 
@@ -29,7 +32,7 @@ app = FastAPI(
 
 
 @app.get("/health", tags=["System"])
-async def health_check():
+async def health_check() -> dict[str, Any]:
     return {
         "status": "ok",
         "service": "blockkick-api",
@@ -39,7 +42,7 @@ async def health_check():
 
 
 @app.get("/", include_in_schema=False)
-async def root_redirect():
+async def root_redirect() -> RedirectResponse | dict[str, str]:
     if settings.DEBUG:
         return RedirectResponse(url="/docs", status_code=status.HTTP_302_FOUND)
     return {"message": "BlockKick API is running"}
