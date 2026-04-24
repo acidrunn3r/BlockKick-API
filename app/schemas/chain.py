@@ -1,5 +1,3 @@
-"""Pydantic schemas for blockchain-related endpoints."""
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
