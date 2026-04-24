@@ -37,7 +37,7 @@ ipdb = "^0.13.13"
 line-length = 100
 target-version = "py311"
 select = ["E", "F", "I", "W", "UP", "B", "C4", "SIM"]
-ignore = ["E501"]
+ignore = ["E501", "B008"]
 
 [tool.ruff.isort]
 known-first-party = ["app"]
