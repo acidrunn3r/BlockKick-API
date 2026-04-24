@@ -7,19 +7,20 @@ from fastapi.responses import RedirectResponse
 
 from app.api.v1.api import api_router
 from app.config import settings
+from app.core.client import client
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     print(f"Starting BlockKick API (env={settings.ENV}, debug={settings.DEBUG})")
 
-    # Initializing...
+    await client.init()
 
     yield
 
     print("Shutting down...")
 
-    # Shutting down...
+    await client.close()
 
 
 app = FastAPI(
