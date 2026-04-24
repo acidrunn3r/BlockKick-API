@@ -5,6 +5,7 @@ from typing import Any
 from fastapi import FastAPI, status
 from fastapi.responses import RedirectResponse
 
+from app.api.v1.api import api_router
 from app.config import settings
 
 
@@ -30,6 +31,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.include_router(api_router, prefix="/api/v1")
+
 
 @app.get("/health", tags=["System"])
 async def health_check() -> dict[str, Any]:
@@ -46,6 +49,3 @@ async def root_redirect() -> RedirectResponse | dict[str, str]:
     if settings.DEBUG:
         return RedirectResponse(url="/docs", status_code=status.HTTP_302_FOUND)
     return {"message": "BlockKick API is running"}
-
-
-# Routers here
