@@ -30,6 +30,12 @@ app = FastAPI(
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
     lifespan=lifespan,
+    openapi_tags=[
+        {"name": "Auth", "description": "Wallet authentication endpoints"},
+        {"name": "Users", "description": "User profile management"},
+        {"name": "Chain", "description": "Blockchain state queries"},
+        {"name": "Projects", "description": "Crowdfunding projects"},
+    ],
 )
 
 app.include_router(api_router, prefix="/api/v1")
