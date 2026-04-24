@@ -1,15 +1,11 @@
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.config import settings
+from app.api.dependencies import get_blockchain_client
+from app.core.client import BlockchainClient
 from app.schemas.chain import ChainInfoResponse, ErrorResponse
 
 router = APIRouter()
-
-
-async def get_blockchain_client() -> httpx.AsyncClient:
-    """Create an async HTTP client for blockchain node requests."""
-    return httpx.AsyncClient(timeout=settings.BLOCKCHAIN_REQUEST_TIMEOUT)
 
 
 @router.get(
@@ -27,15 +23,12 @@ async def get_blockchain_client() -> httpx.AsyncClient:
     },
 )
 async def get_chain_info(
-    client: httpx.AsyncClient = Depends(get_blockchain_client),
+    client: BlockchainClient = Depends(get_blockchain_client),
 ) -> ChainInfoResponse:
     """Get current blockchain state information.
 
-    Proxies a request to the blockchain node's `/api/v1/chain` endpoint
-    and returns the current chain height and latest block hash.
-
     Args:
-        client: Injected async HTTP client for node communication.
+        client: Injected singleton blockchain client.
 
     Returns:
         ChainInfoResponse: Validated JSON response with height and block hash.
@@ -45,23 +38,15 @@ async def get_chain_info(
         HTTPException: 500 if the node returns an unexpected error response.
     """
     try:
-        url = f"{settings.BLOCKCHAIN_NODE_URL.rstrip('/')}/api/v1/chain"
-        response = await client.get(url)
-        response.raise_for_status()
-
-        return ChainInfoResponse.model_validate(response.json())
-
-    except httpx.ConnectError as e:
+        data = await client.get_chain_info()
+        return ChainInfoResponse.model_validate(data)
+    except httpx.RequestError as e:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Blockchain node is unavailable",
         ) from e
-
     except httpx.HTTPStatusError as e:
         raise HTTPException(
             status_code=e.response.status_code,
             detail=f"Node error: {e.response.text}",
         ) from e
-
-    finally:
-        await client.aclose()
