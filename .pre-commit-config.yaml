@@ -31,3 +31,13 @@ repos:
         args:
           - --config-file=pyproject.toml
           - --explicit-package-bases
+
+  - repo: local
+    hooks:
+      - id: pytest-unit
+        name: Run unit tests
+        entry: poetry run pytest -m unit --ff -q
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [commit]
