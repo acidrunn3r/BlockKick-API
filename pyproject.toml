@@ -36,17 +36,54 @@ ipdb = "^0.13.13"
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+
+[tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP", "B", "C4", "SIM"]
 ignore = ["E501", "B008"]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["app"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = [
+    "ignore:'asyncio.iscoroutinefunction' is deprecated:DeprecationWarning:pytest_asyncio",
+    "ignore:'asyncio.get_event_loop_policy' is deprecated:DeprecationWarning:pytest_asyncio",
+]
+markers = [
+    "unit",
+]
 testpaths = ["tests"]
-python_files = ["test_*.py", "*_test.py"]
-addopts = "-v --tb=short"
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--cov=app",
+    "--cov-report=term-missing",
+    "--cov-report=html:htmlcov",
+    "--cov-report=xml:coverage.xml",
+    "--strict-markers",
+]
+
+[tool.coverage.run]
+source = ["app"]
+omit = [
+    "*/__pycache__/*",
+    "*/.venv/*",
+    "*/tests/*",
+    "*/alembic/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if settings.DEBUG",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
 
 [tool.mypy]
 python_version = "3.11"

@@ -1,4 +1,4 @@
-.PHONY: help up down logs restart lint format shell migrate
+.PHONY: help up down logs restart lint format shell migrate test
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -38,3 +38,6 @@ lint:
 format:
 	poetry run black app/
 	poetry run ruff check --fix app/
+
+test:
+	poetry run pytest
