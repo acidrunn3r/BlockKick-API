@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ChallengeRequest(BaseModel):
@@ -36,3 +36,33 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "Bearer"
     expires_in: int = Field(..., description="Access token lifetime in seconds")
+
+
+class RefreshRequest(BaseModel):
+    """Request model for token refresh endpoint."""
+
+    refresh_token: str = Field(
+        ..., description="Valid refresh token issued by /auth/login"
+    )
+
+
+class UserMeResponse(BaseModel):
+    """Response model for current user profile."""
+
+    wallet_address: str = Field(
+        ...,
+        pattern=r"^[a-fA-F0-9]{64}$",
+        description="Ed25519 public key in hexadecimal format",
+    )
+    display_name: str = Field(..., description="User's public display name")
+    bio: str = Field(default="", description="Short biography or description")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "wallet_address": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+                "display_name": "User_a1b2c3",
+                "bio": "Blockchain enthusiast",
+            }
+        }
+    )

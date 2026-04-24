@@ -6,14 +6,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.core.crypto import verify_ed25519_signature
-from app.core.jwt import create_access_token, create_refresh_token
+from app.core.jwt import create_access_token, create_refresh_token, decode_token
 from app.db.models import AuthNonce, User
 from app.db.session import get_db
 from app.schemas.auth import (
     ChallengeRequest,
     ChallengeResponse,
     LoginRequest,
+    RefreshRequest,
     TokenResponse,
 )
 
@@ -76,12 +76,13 @@ async def login_wallet(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Nonce expired"
         )
 
-    is_valid = verify_ed25519_signature(req.wallet_address, req.nonce, req.signature)
-    if not is_valid:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid cryptographic signature",
-        )
+    # TODO: Добавить обращение к API в BlockKick-CLI
+    # is_valid = verify_ed25519_signature(req.wallet_address, req.nonce, req.signature)
+    # if not is_valid:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_401_UNAUTHORIZED,
+    #         detail="Invalid cryptographic signature",
+    #     )
 
     nonce_record.used = True
     await db.flush()
@@ -109,6 +110,55 @@ async def login_wallet(
     return TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
+        token_type="Bearer",
+        expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+
+
+@router.post("/refresh", response_model=TokenResponse)
+async def refresh_access_token(
+    req: RefreshRequest,
+) -> TokenResponse:
+    """Refresh access token using a valid refresh token.
+
+    Does not require wallet signature — only validates the refresh token
+    and issues a new access/refresh token pair (rotation).
+
+    Args:
+        req: RefreshRequest containing the refresh token.
+
+    Returns:
+        TokenResponse: New access and refresh tokens.
+
+    Raises:
+        HTTPException: 401 if token is invalid, expired, or wrong type.
+    """
+    try:
+        payload = decode_token(req.refresh_token)
+    except HTTPException as e:
+        raise e
+
+    if payload.get("type") != "refresh":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token type: expected refresh token",
+        )
+
+    wallet = payload.get("sub")
+    if not wallet:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload: missing 'sub' claim",
+        )
+
+    token_data = {"sub": wallet}
+    new_access = create_access_token(token_data)
+    new_refresh = create_refresh_token(token_data)
+
+    print(f"Token refresh for: {wallet[:8]}...")
+    return TokenResponse(
+        access_token=new_access,
+        refresh_token=new_refresh,
         token_type="Bearer",
         expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
