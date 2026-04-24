@@ -58,11 +58,12 @@ class UserMeResponse(BaseModel):
     bio: str = Field(default="", description="Short biography or description")
 
     model_config = ConfigDict(
+        from_attributes=True,
         json_schema_extra={
             "example": {
                 "wallet_address": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
                 "display_name": "User_a1b2c3",
                 "bio": "Blockchain enthusiast",
             }
-        }
+        },
     )

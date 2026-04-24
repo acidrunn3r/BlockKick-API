@@ -9,7 +9,7 @@ from app.core.jwt import decode_token
 from app.db.models import User
 from app.db.session import get_db
 
-security = HTTPBearer(auto_error=False)
+security = HTTPBearer(scheme_name="BearerAuth", auto_error=False)
 
 
 async def get_current_user(
