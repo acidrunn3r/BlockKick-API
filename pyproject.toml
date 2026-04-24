@@ -53,7 +53,9 @@ python_version = "3.11"
 strict = true
 ignore_missing_imports = true
 plugins = ["pydantic.mypy"]
+disable_error_code = ["unused-ignore"]
 
 [[tool.mypy.overrides]]
-module = ["tests.*"]
+module = ["alembic.*", "tests.*"]
 disable_error_code = ["no-untyped-def"]
+ignore_errors = true

@@ -22,7 +22,10 @@ shell:
 	docker compose exec api bash
 
 migrate:
-	docker compose exec api poetry run alembic upgrade head
+	docker compose exec api alembic upgrade head
+
+makemigrations:
+	docker compose exec api alembic revision --autogenerate -m "$(MSG)"
 
 # Dev
 install:
