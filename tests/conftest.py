@@ -1,5 +1,5 @@
-import os
 from collections.abc import AsyncGenerator, Generator
+from unittest.mock import AsyncMock
 
 import pytest
 import pytest_asyncio
@@ -7,7 +7,9 @@ from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.config import Settings, get_settings
+from app.api.dependencies import get_blockchain_client
+from app.config import Settings
+from app.core.client import BlockchainClient
 from app.core.jwt import create_access_token, create_refresh_token
 from app.db.models import Base
 from app.db.session import get_db
@@ -17,16 +19,10 @@ from app.main import app
 @pytest.fixture(scope="session")
 def test_settings() -> Settings:
     """Override settings for test environment."""
-    os.environ["ENV"] = "testing"
-    os.environ["DEBUG"] = "True"
-    os.environ["DATABASE_URL"] = (
-        "postgresql+asyncpg://test:test@localhost:5432/blockkick_test"
+    return Settings(
+        JWT_SECRET="test-secret-key-for-testing-only-1234567890abcdef",
+        _env_file="env.test",
     )
-    os.environ["JWT_SECRET"] = "test-secret-key-for-testing-only-1234567890"
-    os.environ["BLOCKCHAIN_NODE_URL"] = "http://mock-blockchain:3000"
-
-    get_settings.cache_clear()
-    return get_settings()
 
 
 @pytest.fixture(autouse=True)
@@ -37,7 +33,7 @@ def override_settings(test_settings: Settings) -> None:
     config.settings = test_settings
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def test_engine(test_settings: Settings):
     """Create test database engine."""
     engine = create_async_engine(
@@ -97,6 +93,26 @@ async def async_client(override_get_db) -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
+
+
+@pytest.fixture
+def mock_blockchain_client() -> BlockchainClient:
+    """Blockchain client with mocked network methods."""
+    mock = AsyncMock(spec=BlockchainClient)
+    mock.get_chain_info.return_value = {
+        "height": 1000,
+        "latest_hash": "abc123def456abc123def456abc123def456abc123def456abc123def456abc1",
+    }
+    mock.get_projects.return_value = []
+    return mock
+
+
+@pytest.fixture
+def override_blockchain_client(mock_blockchain_client: BlockchainClient):
+    """Override blockchain client dependency for tests."""
+    app.dependency_overrides[get_blockchain_client] = lambda: mock_blockchain_client
+    yield mock_blockchain_client
+    app.dependency_overrides.pop(get_blockchain_client, None)
 
 
 @pytest.fixture
