@@ -49,7 +49,7 @@ async def test_engine(test_settings: Settings):
     await engine.dispose()
 
 
-@pytest_asyncio.fixture(scope="function")
+@pytest_asyncio.fixture(scope="function", loop_scope="session")
 async def db_session(
     test_engine,
 ) -> AsyncGenerator[AsyncSession, None]:
@@ -87,7 +87,7 @@ def client(override_get_db) -> Generator[TestClient, None, None]:
         yield c
 
 
-@pytest_asyncio.fixture(scope="function")
+@pytest_asyncio.fixture(scope="function", loop_scope="session")
 async def async_client(override_get_db) -> AsyncGenerator[AsyncClient, None]:
     """Async HTTPX client for async endpoint tests."""
     transport = ASGITransport(app=app)
