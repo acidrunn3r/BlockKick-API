@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,22 +10,22 @@ router = APIRouter()
 
 
 @router.get(
-    "",
+    "/{address}/transactions",
     response_model=list[TransactionResponse],
-    summary="List transactions for a wallet address",
 )
-async def list_transactions(
-    address: str = Query(
-        ...,
-        min_length=64,
-        max_length=64,
-        description="Hex-encoded Ed25519 public key (64 chars)",
-    ),
+async def get_wallet_transactions(
+    address: str,
     db: AsyncSession = Depends(get_db),
 ) -> list[TransactionResponse]:
     """Return all indexed transactions where the wallet is sender or recipient,
     ordered newest block first.
     """
+    if len(address) != 64:
+        raise HTTPException(
+            status_code=422,
+            detail="address must be exactly 64 hex characters",
+        )
+
     result = await db.execute(
         select(IndexedTransaction)
         .where(

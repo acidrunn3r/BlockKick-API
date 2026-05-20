@@ -35,3 +35,29 @@ class ProjectSummary(BaseModel):
             }
         }
     )
+
+
+class RecentBacker(BaseModel):
+    """A single FundProject contribution."""
+
+    from_address: str = Field(..., description="Backer wallet address")
+    amount: int = Field(..., description="Amount contributed")
+    timestamp: int = Field(..., description="Unix timestamp of the contribution")
+
+
+class ProjectDetail(BaseModel):
+    """Full detail for a single crowdfunding project, including recent backers."""
+
+    project_id: str = Field(..., description="Unique project identifier")
+    name: str = Field(..., description="Project name")
+    description: str | None = Field(None, description="Project description")
+    goal_amount: int = Field(..., ge=1, description="Target funding amount in coins")
+    raised_amount: int = Field(..., ge=0, description="Amount raised so far")
+    status: ProjectStatus = Field(..., description="Current project status")
+    deadline_timestamp: int | None = Field(None, description="Funding deadline (unix)")
+    creator_wallet: str | None = Field(None, description="Creator wallet address")
+    recent_backers: list[RecentBacker] = Field(
+        default_factory=list, description="Last 5 funders"
+    )
+
+    model_config = ConfigDict(extra="ignore")

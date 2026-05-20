@@ -104,6 +104,7 @@ def mock_blockchain_client() -> BlockchainClient:
         "latest_hash": "abc123def456abc123def456abc123def456abc123def456abc123def456abc1",
     }
     mock.get_projects.return_value = []
+    mock.get_project.return_value = None
     return mock
 
 

@@ -67,6 +67,11 @@ class BlockchainClient:
             await self._fetch_with_cache("projects", "/api/v1/projects"),
         )
 
+    async def get_project(self, project_id: str) -> dict[str, Any] | None:
+        """Return a single project by ID, or None if not found."""
+        projects = await self.get_projects()
+        return next((p for p in projects if p.get("project_id") == project_id), None)
+
     async def get_block(self, height: int) -> dict[str, Any]:
         """Fetch a single block by height (no cache — used by indexer)."""
         if not self.client:
