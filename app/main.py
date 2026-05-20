@@ -43,7 +43,7 @@ app = FastAPI(
         {"name": "Users", "description": "User profile management"},
         {"name": "Chain", "description": "Blockchain state queries"},
         {"name": "Projects", "description": "Crowdfunding projects"},
-        {"name": "Transactions", "description": "Indexed transaction history"},
+        {"name": "Wallets", "description": "Wallet transaction history"},
     ],
 )
 

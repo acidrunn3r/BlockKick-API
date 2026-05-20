@@ -8,6 +8,8 @@ ADDR_A = "a" * 64
 ADDR_B = "b" * 64
 ADDR_C = "c" * 64
 
+BASE = "/api/v1/wallets"
+
 
 def _make_tx(
     tx_id: str,
@@ -32,23 +34,23 @@ def _make_tx(
 
 
 @pytest.mark.unit
-class TestTransactionsEndpoint:
+class TestWalletTransactionsEndpoint:
     @pytest.mark.asyncio
     async def test_returns_empty_list_when_no_txs(self, async_client):
-        response = await async_client.get(f"/api/v1/transactions?address={ADDR_A}")
+        response = await async_client.get(f"{BASE}/{ADDR_A}/transactions")
         assert response.status_code == 200
         assert response.json() == []
 
     @pytest.mark.asyncio
     async def test_returns_txs_where_address_is_sender(self, async_client, db_session):
-        db_session.add(_make_tx("tx001", from_address=ADDR_A, to_address=ADDR_B))
+        db_session.add(_make_tx("tw001", from_address=ADDR_A, to_address=ADDR_B))
         await db_session.flush()
 
-        response = await async_client.get(f"/api/v1/transactions?address={ADDR_A}")
+        response = await async_client.get(f"{BASE}/{ADDR_A}/transactions")
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
-        assert data[0]["tx_id"] == "tx001"
+        assert data[0]["tx_id"] == "tw001"
         assert data[0]["tx_type"] == "Transfer"
         assert data[0]["from_address"] == ADDR_A
         assert data[0]["to_address"] == ADDR_B
@@ -58,49 +60,48 @@ class TestTransactionsEndpoint:
     async def test_returns_txs_where_address_is_recipient(
         self, async_client, db_session
     ):
-        db_session.add(_make_tx("tx002", from_address=ADDR_C, to_address=ADDR_B))
+        db_session.add(_make_tx("tw002", from_address=ADDR_C, to_address=ADDR_B))
         await db_session.flush()
 
-        response = await async_client.get(f"/api/v1/transactions?address={ADDR_B}")
+        response = await async_client.get(f"{BASE}/{ADDR_B}/transactions")
         assert response.status_code == 200
-        data = response.json()
-        tx_ids = [tx["tx_id"] for tx in data]
-        assert "tx002" in tx_ids
+        tx_ids = [tx["tx_id"] for tx in response.json()]
+        assert "tw002" in tx_ids
 
     @pytest.mark.asyncio
     async def test_excludes_unrelated_txs(self, async_client, db_session):
-        db_session.add(_make_tx("tx003", from_address=ADDR_B, to_address=ADDR_C))
+        db_session.add(_make_tx("tw003", from_address=ADDR_B, to_address=ADDR_C))
         await db_session.flush()
 
-        response = await async_client.get(f"/api/v1/transactions?address={ADDR_A}")
+        response = await async_client.get(f"{BASE}/{ADDR_A}/transactions")
         assert response.status_code == 200
         tx_ids = [tx["tx_id"] for tx in response.json()]
-        assert "tx003" not in tx_ids
+        assert "tw003" not in tx_ids
 
     @pytest.mark.asyncio
     async def test_returns_both_sent_and_received(self, async_client, db_session):
         db_session.add(
-            _make_tx("tx004", from_address=ADDR_A, to_address=ADDR_B, block_height=5)
+            _make_tx("tw004", from_address=ADDR_A, to_address=ADDR_B, block_height=5)
         )
         db_session.add(
-            _make_tx("tx005", from_address=ADDR_C, to_address=ADDR_A, block_height=3)
+            _make_tx("tw005", from_address=ADDR_C, to_address=ADDR_A, block_height=3)
         )
         await db_session.flush()
 
-        response = await async_client.get(f"/api/v1/transactions?address={ADDR_A}")
+        response = await async_client.get(f"{BASE}/{ADDR_A}/transactions")
         assert response.status_code == 200
         tx_ids = [tx["tx_id"] for tx in response.json()]
-        assert "tx004" in tx_ids
-        assert "tx005" in tx_ids
+        assert "tw004" in tx_ids
+        assert "tw005" in tx_ids
 
     @pytest.mark.asyncio
     async def test_ordered_by_block_height_descending(self, async_client, db_session):
-        db_session.add(_make_tx("tx006", from_address=ADDR_A, block_height=1))
-        db_session.add(_make_tx("tx007", from_address=ADDR_A, block_height=10))
-        db_session.add(_make_tx("tx008", from_address=ADDR_A, block_height=5))
+        db_session.add(_make_tx("tw006", from_address=ADDR_A, block_height=1))
+        db_session.add(_make_tx("tw007", from_address=ADDR_A, block_height=10))
+        db_session.add(_make_tx("tw008", from_address=ADDR_A, block_height=5))
         await db_session.flush()
 
-        response = await async_client.get(f"/api/v1/transactions?address={ADDR_A}")
+        response = await async_client.get(f"{BASE}/{ADDR_A}/transactions")
         assert response.status_code == 200
         heights = [tx["block_height"] for tx in response.json()]
         relevant = [h for h in heights if h in (1, 5, 10)]
@@ -110,7 +111,7 @@ class TestTransactionsEndpoint:
     async def test_coinbase_tx_has_no_sender(self, async_client, db_session):
         db_session.add(
             _make_tx(
-                "tx009",
+                "tw009",
                 tx_type="Coinbase",
                 from_address=None,
                 to_address=ADDR_A,
@@ -119,9 +120,9 @@ class TestTransactionsEndpoint:
         )
         await db_session.flush()
 
-        response = await async_client.get(f"/api/v1/transactions?address={ADDR_A}")
+        response = await async_client.get(f"{BASE}/{ADDR_A}/transactions")
         assert response.status_code == 200
-        coinbase = next(tx for tx in response.json() if tx["tx_id"] == "tx009")
+        coinbase = next(tx for tx in response.json() if tx["tx_id"] == "tw009")
         assert coinbase["from_address"] is None
         assert coinbase["amount"] == 50
 
@@ -131,7 +132,7 @@ class TestTransactionsEndpoint:
     ):
         db_session.add(
             _make_tx(
-                "tx010",
+                "tw010",
                 tx_type="CreateProject",
                 from_address=ADDR_A,
                 to_address=None,
@@ -141,18 +142,13 @@ class TestTransactionsEndpoint:
         )
         await db_session.flush()
 
-        response = await async_client.get(f"/api/v1/transactions?address={ADDR_A}")
+        response = await async_client.get(f"{BASE}/{ADDR_A}/transactions")
         assert response.status_code == 200
-        proj_tx = next(tx for tx in response.json() if tx["tx_id"] == "tx010")
+        proj_tx = next(tx for tx in response.json() if tx["tx_id"] == "tw010")
         assert proj_tx["project_id"] == "proj_abc123def456ab01"
         assert proj_tx["amount"] is None
 
     @pytest.mark.asyncio
-    async def test_missing_address_returns_422(self, async_client):
-        response = await async_client.get("/api/v1/transactions")
-        assert response.status_code == 422
-
-    @pytest.mark.asyncio
     async def test_short_address_returns_422(self, async_client):
-        response = await async_client.get("/api/v1/transactions?address=tooshort")
+        response = await async_client.get(f"{BASE}/tooshort/transactions")
         assert response.status_code == 422
