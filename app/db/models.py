@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, String, Text, func
+from sqlalchemy import BigInteger, Boolean, DateTime, Integer, String, Text, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -61,3 +61,35 @@ class AuthNonce(Base):
 
     def __repr__(self) -> str:
         return f"<AuthNonce(nonce='{self.nonce[:8]}...', used={self.used})>"
+
+
+class IndexedTransaction(Base):
+    """Transaction record indexed from the blockchain node."""
+
+    __tablename__ = "indexed_transactions"
+
+    tx_id: Mapped[str] = mapped_column(
+        String(64),
+        primary_key=True,
+        index=True,
+        comment="SHA-256 of canonical tx JSON",
+    )
+    tx_type: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        comment="Transfer | CreateProject | FundProject | Coinbase",
+    )
+    from_address: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
+    to_address: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
+    amount: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    project_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    block_height: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    timestamp: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    raw_data: Mapped[str] = mapped_column(Text, nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<IndexedTransaction(id='{self.tx_id[:8]}...', type='{self.tx_type}')>"

@@ -1,4 +1,6 @@
-.PHONY: help up down logs restart lint format shell migrate test
+.PHONY: help up down logs restart lint format shell migrate test bump
+
+rule ?= patch
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -41,3 +43,9 @@ format:
 
 test:
 	poetry run pytest
+
+bump: ## Bump version (rule=patch|minor|major)
+	poetry version $(rule)
+	git add pyproject.toml
+	git commit -m "bump: v$$(poetry version -s)"
+	git tag v$$(poetry version -s)

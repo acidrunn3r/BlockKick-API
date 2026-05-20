@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     DATABASE_POOL_SIZE: int = Field(default=10, ge=1, le=50)
     DATABASE_MAX_OVERFLOW: int = Field(default=20, ge=0)
 
+    # Indexer
+    INDEXER_POLL_INTERVAL: int = Field(default=5, ge=1, le=3600)
+
     # JWT
     JWT_SECRET: str = Field(..., min_length=16)
     JWT_ALGORITHM: str = "HS256"

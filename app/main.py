@@ -1,5 +1,6 @@
+import asyncio
 from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from typing import Any
 
 from fastapi import FastAPI, status
@@ -8,6 +9,7 @@ from fastapi.responses import RedirectResponse
 from app.api.v1.api import api_router
 from app.config import settings
 from app.core.client import client
+from app.core.indexer import run_indexer
 
 
 @asynccontextmanager
@@ -16,9 +18,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     await client.init()
 
+    indexer_task = asyncio.create_task(run_indexer())
+
     yield
 
     print("Shutting down...")
+
+    indexer_task.cancel()
+    with suppress(asyncio.CancelledError):
+        await indexer_task
 
     await client.close()
 
@@ -35,6 +43,7 @@ app = FastAPI(
         {"name": "Users", "description": "User profile management"},
         {"name": "Chain", "description": "Blockchain state queries"},
         {"name": "Projects", "description": "Crowdfunding projects"},
+        {"name": "Transactions", "description": "Indexed transaction history"},
     ],
 )
 
