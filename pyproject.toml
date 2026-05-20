@@ -1,6 +1,6 @@
 [project]
 name = "blockkick-api"
-version = "0.1.1"
+version = "1.0.0"
 description = "FastAPI aggregation service for BlockKick blockchain platform"
 authors = [{name = "Alexander Lipov", email = "lipov.sa@mail.ru"}]
 license = {text = "MIT"}
