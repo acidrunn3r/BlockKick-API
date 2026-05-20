@@ -67,6 +67,14 @@ class BlockchainClient:
             await self._fetch_with_cache("projects", "/api/v1/projects"),
         )
 
+    async def get_block(self, height: int) -> dict[str, Any]:
+        """Fetch a single block by height (no cache — used by indexer)."""
+        if not self.client:
+            raise RuntimeError("BlockchainClient is not initialized")
+        response = await self.client.get(f"/api/v1/block/{height}")
+        response.raise_for_status()
+        return cast(dict[str, Any], response.json())
+
 
 # Module-level singleton
 client = BlockchainClient()
