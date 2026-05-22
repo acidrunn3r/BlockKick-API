@@ -11,7 +11,7 @@ services:
     environment:
       - ENV=${ENV:-development}
       - DEBUG=${DEBUG:-false}
-      - BLOCKCHAIN_NODE_URL=${BLOCKCHAIN_NODE_URL:-http://host.docker.internal:3000}
+      - BLOCKCHAIN_NODE_URL=${BLOCKCHAIN_NODE_URL:-http://blockkick-node:3000}
       - BLOCKCHAIN_REQUEST_TIMEOUT=${BLOCKCHAIN_REQUEST_TIMEOUT:-30}
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-blockkick}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-blockkick_dev}
       - DATABASE_POOL_SIZE=${DATABASE_POOL_SIZE:-10}
@@ -25,6 +25,7 @@ services:
         condition: service_healthy
     networks:
       - blockkick-net
+      - node-net
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 30s
@@ -47,7 +48,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       POSTGRES_DB: ${POSTGRES_DB:-blockkick_dev}
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -67,3 +68,6 @@ volumes:
 networks:
   blockkick-net:
     driver: bridge
+  node-net:
+    external: true
+    name: blockkick-network
